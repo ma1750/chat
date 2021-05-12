@@ -45,7 +45,6 @@ int main(int argc, char const *argv[])
         freeaddrinfo(ai);
         if (close(socketfd) == -1) {
             perror("close failed");
-            exit(EXIT_FAILURE);
         }
         exit(EXIT_FAILURE);
     }
@@ -60,7 +59,6 @@ int main(int argc, char const *argv[])
         perror("connect() failed");
         if (close(socketfd) == -1) {
             perror("close failed");
-            exit(EXIT_FAILURE);
         }
         exit(EXIT_FAILURE);
     }
@@ -71,7 +69,6 @@ int main(int argc, char const *argv[])
         perror("recv failed");
         if (close(socketfd) == -1) {
             perror("close failed");
-            exit(EXIT_FAILURE);
         }
         exit(EXIT_FAILURE);
     }
@@ -79,7 +76,6 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "invalid packet: %s\n", recv_buf);
         if (close(socketfd) == -1) {
             perror("close failed");
-            exit(EXIT_FAILURE);
         }
         exit(EXIT_FAILURE);
     }
@@ -92,7 +88,6 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "invalid input");
         if (close(socketfd) == -1) {
             perror("close failed");
-            exit(EXIT_FAILURE);
         }
         exit(EXIT_FAILURE);
     }
