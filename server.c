@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <string.h>
 
 int main(int argc, char const *argv[])
 {
@@ -55,6 +56,28 @@ int main(int argc, char const *argv[])
         if (close(socketfd) == -1) {
             perror("close failed");
         }
+        exit(EXIT_FAILURE);
+    }
+
+    int client_socketfd;
+    if ((client_socketfd = accept(socketfd, (struct sockaddr *)&server, sizeof(server))) == -1) {
+        perror("accept failed");
+        if (close(socketfd) == -1) {
+            perror("close failed");
+        }
+        exit(EXIT_FAILURE);
+    }
+
+    send(client_socketfd, "connect OK", 10, 0);
+    char recv_buf[128];
+    do {
+        recv(client_socketfd, recv_buf, 128, 0);
+        printf("Client: %s\n", recv_buf);
+    } while (strncmp("exit", recv_buf, 4));
+    send(client_socketfd, "exit_ack", 8, 0);
+
+    if (close(client_socketfd) == -1) {
+        perror("close failed");
         exit(EXIT_FAILURE);
     }
 
