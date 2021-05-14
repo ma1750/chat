@@ -131,7 +131,7 @@ int input(char *ret_ptr)
 {
     int ret_len;
     while (fgets(ret_ptr, BUF_LEN, stdin) == NULL || ret_ptr[0] == '\n') {
-        fprintf(stderr, "fgets error");
+        fprintf(stderr, "fgets error\n");
     }
 
     ret_len = strlen(ret_ptr);
