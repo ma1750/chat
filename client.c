@@ -10,7 +10,7 @@
 #define BUF_LEN 128
 
 int input(char*);
-void *listen_func(int);
+void *listen_func(void*);
 
 int main(int argc, char const *argv[])
 {
@@ -39,7 +39,7 @@ int main(int argc, char const *argv[])
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    ret = getaddrinfo(server_addr, NULL, &hints, ai);
+    ret = getaddrinfo(server_addr, NULL, &hints, &ai);
     if (ret == -1) {
         perror("getaddrinfo() failed");
         freeaddrinfo(ai);
@@ -50,7 +50,7 @@ int main(int argc, char const *argv[])
     }
 
     memcpy(&server, ai->ai_addr, ai->ai_addrlen);
-    server.sin_port = port;
+    server.sin_port = htons(port);
 
     freeaddrinfo(ai);
 
@@ -98,7 +98,7 @@ int main(int argc, char const *argv[])
     send(socketfd, input_buf, input_len, NULL);
 
     pthread_t listen_thread;
-    pthread_create(&listen_thread, NULL, (void *)listen_func, NULL);
+    pthread_create(&listen_thread, NULL, (void *)listen_func, (void *)socketfd);
 
     do {
         if ((input_len = input(input_buf)) == -1) {
@@ -142,8 +142,9 @@ int input(char *ret_ptr)
 }
 
 
-void *listen_func(int _socketfd)
+void *listen_func(void *socketfd)
 {
+    int _socketfd = (int)socketfd;
     char recv_buf[BUF_LEN];
     int recv_len;
     do {
@@ -152,7 +153,8 @@ void *listen_func(int _socketfd)
             perror(NULL);
             break;
         }
-    } while (strncmp(recv_buf, "exit_ack", 8) == 0);
+        printf("%s\n", recv_buf);
+    } while (strncmp(recv_buf, "exit_ack", 8) != 0);
 
     return NULL;
 }

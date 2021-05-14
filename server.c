@@ -40,6 +40,7 @@ int main(int argc, char const *argv[])
     socklen_t sin_size;
 
     server.sin_family = AF_INET;
+    server.sin_port = htons(port);
     inet_aton(server_addr, &server.sin_addr);
     sin_size = sizeof(struct sockaddr_in);
 
@@ -60,7 +61,7 @@ int main(int argc, char const *argv[])
     }
 
     int client_socketfd;
-    if ((client_socketfd = accept(socketfd, (struct sockaddr *)&server, sizeof(server))) == -1) {
+    if ((client_socketfd = accept(socketfd, (struct sockaddr *)&server, &sin_size)) == -1) {
         perror("accept failed");
         if (close(socketfd) == -1) {
             perror("close failed");
@@ -70,8 +71,11 @@ int main(int argc, char const *argv[])
 
     send(client_socketfd, "connect OK", 10, 0);
     char recv_buf[128];
+    int recv_len;
     do {
-        recv(client_socketfd, recv_buf, 128, 0);
+        if ((recv_len = recv(client_socketfd, recv_buf, 128, 0)) <= 0)
+            break;
+        recv_buf[recv_len] = '\0';
         printf("Client: %s\n", recv_buf);
     } while (strncmp("exit", recv_buf, 4));
     send(client_socketfd, "exit_ack", 8, 0);
