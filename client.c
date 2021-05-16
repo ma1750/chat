@@ -6,8 +6,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <pthread.h>
-
-#define BUF_LEN 128
+#include "chat.h"
 
 int input(char*);
 void *listen_func(void*);

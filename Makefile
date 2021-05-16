@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -Wall -lpthread
+CFLAGS = -O2 -Wall -lpthread -I ./includes
 
 all: chat
 
