@@ -103,6 +103,7 @@ int main(int argc, char const *argv[])
 void *listen_func(void *socketfd)
 {
     int _socketfd = (int)socketfd;
+    char name[20] = "\0";
     char recv_buf[BUF_LEN];
     int recv_len;
     int send_len;
@@ -119,7 +120,9 @@ void *listen_func(void *socketfd)
             break;
         }
         recv_buf[recv_len] = '\0';
-        printf("[tid: %ld]%s\n", pthread_self(), recv_buf);
+        if (!strlen(name))
+            strncpy(name, recv_buf, 20);
+        printf("[tid: %ld][%s]%s\n", pthread_self(), name, recv_buf);
     } while (strncmp(recv_buf, "exit", 4) != 0);
 
     if((send_len = send(_socketfd, "exit_ack", 8, 0)) == -1) {
