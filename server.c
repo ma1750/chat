@@ -5,6 +5,11 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <string.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+#include "chat.h"
+
+void *listen_func(void*);
 
 int main(int argc, char const *argv[])
 {
@@ -61,6 +66,7 @@ int main(int argc, char const *argv[])
     }
 
     int client_socketfd;
+    pthread_t worker;
     if ((client_socketfd = accept(socketfd, (struct sockaddr *)&server, &sin_size)) == -1) {
         perror("accept failed");
         if (close(socketfd) == -1) {
@@ -69,16 +75,17 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
 
-    send(client_socketfd, "connect OK", 10, 0);
-    char recv_buf[128];
-    int recv_len;
-    do {
-        if ((recv_len = recv(client_socketfd, recv_buf, 128, 0)) <= 0)
-            break;
-        recv_buf[recv_len] = '\0';
-        printf("Client: %s\n", recv_buf);
-    } while (strncmp("exit", recv_buf, 4));
-    send(client_socketfd, "exit_ack", 8, 0);
+    pthread_create(&worker, NULL, (void *)listen_func, (void *)client_socketfd);
+    if (worker != NULL) {
+        if ((pthread_join(worker, NULL) != 0)){
+            perror("pthread_join failed");
+            if (close(socketfd) == -1) {
+                perror("close failed");
+                exit(EXIT_FAILURE);
+            }
+        }
+        worker = NULL;
+    }
 
     if (close(client_socketfd) == -1) {
         perror("close failed");
@@ -90,4 +97,36 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
     return 0;
+}
+
+
+void *listen_func(void *socketfd)
+{
+    int _socketfd = (int)socketfd;
+    char recv_buf[BUF_LEN];
+    int recv_len;
+    int send_len;
+    if((send_len = send(_socketfd, "connect OK", 10, 0)) == -1) {
+        fprintf(stderr, "[tid: %ld]send failed: connect OK\n", pthread_self());
+        perror(NULL);
+        return NULL;
+    }
+
+    do {
+        if ((recv_len = recv(_socketfd, recv_buf, BUF_LEN, 0)) == -1) {
+            fprintf(stderr, "[tid: %ld]recv failed", pthread_self());
+            perror(NULL);
+            break;
+        }
+        recv_buf[recv_len] = '\0';
+        printf("[tid: %ld]%s\n", pthread_self(), recv_buf);
+    } while (strncmp(recv_buf, "exit", 4) != 0);
+
+    if((send_len = send(_socketfd, "exit_ack", 8, 0)) == -1) {
+        fprintf(stderr, "[tid: %ld]send failed: exit_ack\n", pthread_self());
+        perror(NULL);
+        return NULL;
+    }
+
+    return NULL;
 }
