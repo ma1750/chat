@@ -7,9 +7,13 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include "chat.h"
 
 void *listen_func(void*);
+void *wait_input();
+
+bool g_stop_server = false;
 
 int main(int argc, char const *argv[])
 {
@@ -67,29 +71,34 @@ int main(int argc, char const *argv[])
 
     int client_socketfd;
     pthread_t worker;
-    if ((client_socketfd = accept(socketfd, (struct sockaddr *)&server, &sin_size)) == -1) {
-        perror("accept failed");
-        if (close(socketfd) == -1) {
-            perror("close failed");
-        }
-        exit(EXIT_FAILURE);
-    }
+    pthread_t input;
+    pthread_create(&input, NULL, (void *)wait_input, NULL);
 
-    pthread_create(&worker, NULL, (void *)listen_func, (void *)client_socketfd);
-    if (worker != NULL) {
-        if ((pthread_join(worker, NULL) != 0)){
-            perror("pthread_join failed");
+    while (!g_stop_server) {
+        if ((client_socketfd = accept(socketfd, (struct sockaddr *)&server, &sin_size)) == -1) {
+            perror("accept failed");
             if (close(socketfd) == -1) {
                 perror("close failed");
-                exit(EXIT_FAILURE);
             }
+            exit(EXIT_FAILURE);
         }
-        worker = NULL;
-    }
 
-    if (close(client_socketfd) == -1) {
-        perror("close failed");
-        exit(EXIT_FAILURE);
+        pthread_create(&worker, NULL, (void *)listen_func, (void *)client_socketfd);
+        if (worker != NULL) {
+            if ((pthread_join(worker, NULL) != 0)){
+                perror("pthread_join failed");
+                if (close(socketfd) == -1) {
+                    perror("close failed");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            worker = NULL;
+        }
+
+        if (close(client_socketfd) == -1) {
+            perror("close failed");
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (close(socketfd) == -1) {
@@ -131,5 +140,15 @@ void *listen_func(void *socketfd)
         return NULL;
     }
 
+    return NULL;
+}
+
+
+void *wait_input()
+{
+    int _c;
+    _c = fgetc(stdin);
+
+    g_stop_server = true;
     return NULL;
 }
