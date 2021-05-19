@@ -87,6 +87,7 @@ int main(int argc, char const *argv[])
         if ((i = search_space()) == -1) {
             // Already maximum connection
             send(client_socketfd, "exit_ack", 8, 0);
+            close(client_socketfd);
             continue;
         }
 
