@@ -11,10 +11,6 @@
 #include "chat.h"
 #include "server.h"
 
-void *listen_func(void*);
-void *wait_input();
-
-bool g_stop_server = false;
 
 int main(int argc, char const *argv[])
 {
@@ -71,9 +67,12 @@ int main(int argc, char const *argv[])
     }
 
     int client_socketfd;
-    pthread_t worker;
-    pthread_t input;
+    init_workers();
+    init_socketfds();
+    pthread_t input, broadcast_thread;
     pthread_create(&input, NULL, (void *)wait_input, NULL);
+    pthread_create(&broadcast_thread, NULL, (void *)broadcast, NULL);
+
 
     while (!g_stop_server) {
         if ((client_socketfd = accept(socketfd, (struct sockaddr *)&server, &sin_size)) == -1) {
@@ -84,21 +83,28 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
 
-        pthread_create(&worker, NULL, (void *)listen_func, (void *)client_socketfd);
-        if (worker != NULL) {
-            if ((pthread_join(worker, NULL) != 0)){
+        int i;
+        if ((i = search_space()) == -1) {
+            // Already maximum connection
+            send(client_socketfd, "exit_ack", 8, 0);
+            continue;
+        }
+
+        g_socketfds[i] = client_socketfd;
+
+        pthread_create(&g_workers[i], NULL, (void *)listen_func, (void *)i);
+    }
+
+    for (int i = 0; i < MAX_CON; ++i) {
+        if (g_workers[i] != NULL) {
+            if ((pthread_join(g_workers[i], NULL) != 0)){
                 perror("pthread_join failed");
                 if (close(socketfd) == -1) {
                     perror("close failed");
                     exit(EXIT_FAILURE);
                 }
             }
-            worker = NULL;
-        }
-
-        if (close(client_socketfd) == -1) {
-            perror("close failed");
-            exit(EXIT_FAILURE);
+            g_workers[i] = NULL;
         }
     }
 
@@ -107,49 +113,4 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
     return 0;
-}
-
-
-void *listen_func(void *socketfd)
-{
-    thread_context ctx;
-    ctx.socketfd = (int)socketfd;
-    ctx.name[0] = '\0';
-    ctx.thread_id = pthread_self();
-    int send_len;
-    if ((send_len = send(ctx.socketfd, "connect OK", 10, 0)) == -1) {
-        fprintf(stderr, "[tid: %d]send failed: connect OK\n", ctx.thread_id);
-        perror(NULL);
-        return NULL;
-    }
-
-    do {
-        if ((ctx.buffer_len = recv(ctx.socketfd, ctx.buffer, BUF_LEN, 0)) == -1) {
-            fprintf(stderr, "[tid: %d]recv failed", ctx.thread_id);
-            perror(NULL);
-            break;
-        }
-        ctx.buffer[ctx.buffer_len] = '\0';
-        if (!strlen(ctx.name))
-            strncpy(ctx.name, ctx.buffer, 20);
-        printf("[tid: %d][%s]%s\n", ctx.thread_id, ctx.name, ctx.buffer);
-    } while (strncmp(ctx.buffer, "exit", 4) != 0);
-
-    if ((send_len = send(ctx.socketfd, "exit_ack", 8, 0)) == -1) {
-        fprintf(stderr, "[tid: %d]send failed: exit_ack\n", ctx.thread_id);
-        perror(NULL);
-        return NULL;
-    }
-
-    return NULL;
-}
-
-
-void *wait_input()
-{
-    int _c;
-    _c = fgetc(stdin);
-
-    g_stop_server = true;
-    return NULL;
 }
