@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include "chat.h"
+#include "server.h"
 
 void *listen_func(void*);
 void *wait_input();
@@ -111,31 +112,31 @@ int main(int argc, char const *argv[])
 
 void *listen_func(void *socketfd)
 {
-    int _socketfd = (int)socketfd;
-    char name[20] = "\0";
-    char recv_buf[BUF_LEN];
-    int recv_len;
+    thread_context ctx;
+    ctx.socketfd = (int)socketfd;
+    ctx.name[0] = '\0';
+    ctx.thread_id = pthread_self();
     int send_len;
-    if((send_len = send(_socketfd, "connect OK", 10, 0)) == -1) {
-        fprintf(stderr, "[tid: %ld]send failed: connect OK\n", pthread_self());
+    if ((send_len = send(ctx.socketfd, "connect OK", 10, 0)) == -1) {
+        fprintf(stderr, "[tid: %d]send failed: connect OK\n", ctx.thread_id);
         perror(NULL);
         return NULL;
     }
 
     do {
-        if ((recv_len = recv(_socketfd, recv_buf, BUF_LEN, 0)) == -1) {
-            fprintf(stderr, "[tid: %ld]recv failed", pthread_self());
+        if ((ctx.buffer_len = recv(ctx.socketfd, ctx.buffer, BUF_LEN, 0)) == -1) {
+            fprintf(stderr, "[tid: %d]recv failed", ctx.thread_id);
             perror(NULL);
             break;
         }
-        recv_buf[recv_len] = '\0';
-        if (!strlen(name))
-            strncpy(name, recv_buf, 20);
-        printf("[tid: %ld][%s]%s\n", pthread_self(), name, recv_buf);
-    } while (strncmp(recv_buf, "exit", 4) != 0);
+        ctx.buffer[ctx.buffer_len] = '\0';
+        if (!strlen(ctx.name))
+            strncpy(ctx.name, ctx.buffer, 20);
+        printf("[tid: %d][%s]%s\n", ctx.thread_id, ctx.name, ctx.buffer);
+    } while (strncmp(ctx.buffer, "exit", 4) != 0);
 
-    if((send_len = send(_socketfd, "exit_ack", 8, 0)) == -1) {
-        fprintf(stderr, "[tid: %ld]send failed: exit_ack\n", pthread_self());
+    if ((send_len = send(ctx.socketfd, "exit_ack", 8, 0)) == -1) {
+        fprintf(stderr, "[tid: %d]send failed: exit_ack\n", ctx.thread_id);
         perror(NULL);
         return NULL;
     }
