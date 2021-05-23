@@ -98,7 +98,7 @@ int main(int argc, char const *argv[])
 
     for (int i = 0; i < MAX_CON; ++i) {
         if (g_workers[i] != NULL) {
-            if ((pthread_join(g_workers[i], NULL) != 0)){
+            if (pthread_join(g_workers[i], NULL) != 0) {
                 perror("pthread_join failed");
                 if (close(socketfd) == -1) {
                     perror("close failed");
