@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +26,23 @@ int main(int argc, char const *argv[])
 
     if (!port) {
         fprintf(stderr, "server port is invalid\n");
+        exit(EXIT_FAILURE);
+    }
+
+    sigset_t sigmask;
+
+    if (sigemptyset(&sigmask) == -1) {
+        perror("sigemptyset() failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sigaddset(&sigmask, SIGUSR1) == -1) {
+        perror("sigaddset() failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pthread_sigmask(SIG_BLOCK, &sigmask, NULL) == -1) {
+        perror("pthread_sigmask() falied");
         exit(EXIT_FAILURE);
     }
 
