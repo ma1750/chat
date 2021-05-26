@@ -1,7 +1,6 @@
 #include "chat.h"
 
-typedef struct
-{
+typedef struct {
     int index;
     int socketfd;
     int thread_id;
@@ -10,8 +9,7 @@ typedef struct
     int buffer_len;
 } thread_context;
 
-
-void *listen_func(void*);
+void *listen_func(void *);
 void *broadcast();
 void *wait_input();
 void init_workers();
@@ -21,7 +19,6 @@ int search_space();
 bool g_stop_server = false;
 pthread_t g_workers[MAX_CON];
 int g_socketfds[MAX_CON];
-
 
 void *listen_func(void *index)
 {
@@ -65,14 +62,12 @@ void *listen_func(void *index)
     return NULL;
 }
 
-
 void *broadcast()
 {
     // TODO: wait signal
     // TODO: broadcast message
     return NULL;
 }
-
 
 void *wait_input()
 {
@@ -83,7 +78,6 @@ void *wait_input()
     return NULL;
 }
 
-
 void init_workers()
 {
     for (int i = 0; i < MAX_CON; ++i)
@@ -91,14 +85,12 @@ void init_workers()
     return NULL;
 }
 
-
 void init_socketfds()
 {
-    for(int i = 0; i < MAX_CON; ++i)
+    for (int i = 0; i < MAX_CON; ++i)
         g_socketfds[i] = -1;
     return NULL;
 }
-
 
 int search_space()
 {

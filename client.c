@@ -1,15 +1,16 @@
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <string.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
 #include "chat.h"
 
-int input(char*);
-void *listen_func(void*);
+int input(char *);
+void *listen_func(void *);
 
 int main(int argc, char const *argv[])
 {
@@ -108,7 +109,7 @@ int main(int argc, char const *argv[])
     } while (strncmp(input_buf, "exit", 4) != 0);
 
     if (listen_thread != NULL) {
-        if ((pthread_join(listen_thread, NULL) != 0)){
+        if ((pthread_join(listen_thread, NULL) != 0)) {
             perror("pthread_join failed");
             if (close(socketfd) == -1) {
                 perror("close failed");
@@ -125,7 +126,6 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-
 int input(char *ret_ptr)
 {
     int ret_len;
@@ -134,12 +134,11 @@ int input(char *ret_ptr)
     }
 
     ret_len = strlen(ret_ptr);
-    if (ret_ptr[ret_len-1] == '\n')
+    if (ret_ptr[ret_len - 1] == '\n')
         ret_ptr[--ret_len] = '\0';
 
     return ret_len;
 }
-
 
 void *listen_func(void *socketfd)
 {

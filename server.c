@@ -1,16 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <pthread.h>
-#include <stdbool.h>
-#include "chat.h"
 #include "server.h"
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <pthread.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "chat.h"
 
 int main(int argc, char const *argv[])
 {
@@ -58,7 +59,7 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (listen(socketfd, SOMAXCONN)  == -1) {
+    if (listen(socketfd, SOMAXCONN) == -1) {
         perror("listen failed");
         if (close(socketfd) == -1) {
             perror("close failed");
@@ -72,7 +73,6 @@ int main(int argc, char const *argv[])
     pthread_t input, broadcast_thread;
     pthread_create(&input, NULL, (void *)wait_input, NULL);
     pthread_create(&broadcast_thread, NULL, (void *)broadcast, NULL);
-
 
     while (!g_stop_server) {
         if ((client_socketfd = accept(socketfd, (struct sockaddr *)&server, &sin_size)) == -1) {
